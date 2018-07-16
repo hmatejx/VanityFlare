@@ -1,0 +1,15 @@
+github handles
+number sequences
+repeating numbers
+letter sequences
+repeating letters
+word letter combo (hashcat ideas?)
+word number combo (hashcat ideas?)
+chinese
+taiwanese
+japanese
+slovenian
+german
+italian
+french
+dictionary
