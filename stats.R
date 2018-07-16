@@ -7,7 +7,11 @@ library(mongolite)
 if (!exists("db") || db$info()$server$ok != 1) {
   if (exists("db")) 
     rm(db)
-  db <- mongo("StellarVanityPool", "mydb", "mongodb://admin:aaaa1111@localhost")
+  url <- "mongodb://"
+  if (nchar(Sys.getenv("MONGO_PASS")) > 0) 
+    url <- paste0(url, Sys.getenv("MONGO_PASS"), "@")
+  url <- paste0(url, "localhost")
+  db <- mongo("StellarVanityPool", "mydb", url)
 }
 
 # basic stats

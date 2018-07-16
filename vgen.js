@@ -10,14 +10,15 @@ program
   .option('-p, --prefix', 'Find address that begins with the words specified')
   .option('-s, --suffix', 'Find address that end with the words specified')
   .parse(process.argv);
-
 suffix = program.suffix || (!program.prefix && !program.suffix);
 
 
-const url = "mongodb://admin:" + process.env.MONGO_PASS + "@localhost:27017?authMechanism=DEFAULT&authSource=admin";
+const url = "mongodb://" + (process.env.MONGO_PASS != null ? process.env.MONGO_PASS + "@" : "") + "localhost:27017";
 const nBench = 1000;
 
+
 VanitySearch = function(words, suffix) {
+
   console.log(`Finding address ...`);
 
   mongo.connect(url, { useNewUrlParser: true }, async function(err, db) {
