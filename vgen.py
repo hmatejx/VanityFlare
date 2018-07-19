@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 from stellar_base.keypair import Keypair
-from pybloomfilter import BloomFilter
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, OperationFailure
 from collections import OrderedDict
@@ -15,27 +14,25 @@ NBENCH = 1000
 
 
 # global variables
-bf = BloomFilter(1e6, 1e-3)
-keywords = []
+keywords = set()
 maxlen = 0
 
 
 # load the list of interesting keywords (suffixes, prefixes)
 def load_keywords(filename):
 
-    global keywords, maxlen
+    global maxlen
 
-    ifile = open(filename, 'rU')
-    reader = csv.reader(ifile, delimiter=',')
+    iFile = open(filename, 'rU')
+    reader = csv.reader(iFile, delimiter=',')
 
     for row in reader:
         if len(row[0]) > 3 and len(row[0]) <= 10:
             keyword = row[0].encode('utf-8')
-            bf.add(keyword)
-            keywords.append(keyword)
+            keywords.add(keyword)
 
-    maxlen = len(keywords[0])
-    ifile.close()
+    maxlen = max([len(k) for k in keywords])
+    iFile.close()
 
     return None
 
@@ -44,9 +41,8 @@ def load_keywords(filename):
 def first_match(address):
 
     for i in range(maxlen, -1, -1):
-        if address[-i:] in bf:
-            if address[-i:] in keywords:
-                return address[-i:]
+        if address[-i:] in keywords:
+            return address[-i:]
 
     # else return none
     return None
