@@ -2,3 +2,5 @@
 \.vscode/
 .RData
 .Rhistory
+
+Rplots\.pdf
