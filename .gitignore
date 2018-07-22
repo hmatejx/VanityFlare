@@ -1,6 +1,8 @@
-
 \.vscode/
 .RData
 .Rhistory
-
 Rplots\.pdf
+*.d
+*.o
+*.a
+vgen.exe
