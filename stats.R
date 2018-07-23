@@ -21,9 +21,9 @@ cat("Total number of generated addresses:", tot, "\n")
 
 
 # get counts
-lens <- 3:8
+lens <- 3:10
 gens <- sapply(lens, function(i) {
-  db$count(paste('{"$expr": { "$eq": [ { "$strLenCP": "$suffix" },', i, '] }}'))
+  db$count(paste('{"len": { "$gt":', i , '}}'))
 })
 
 # plot results
@@ -36,7 +36,7 @@ box()
 
 # print interesting suffixes
 cat("Interesting addresses:\n")
-int <-unique(sort(db$find('{"$expr": { "$gt": [ { "$strLenCP": "$suffix" }, 6 ] }}')$suffix))
+int <-unique(sort(db$find('{"len": { "$gt": 7 }}')$suffix))
 print(int)
 
 # close connection

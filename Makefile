@@ -1,6 +1,6 @@
 EXEC     = vgen.exe
 CC       = gcc
-CFLAGS   = -std=gnu11 -g -O3 -funroll-loops -fomit-frame-pointer -msse4.2 -Wall -Wextra -Wpedantic -Wstrict-aliasing
+CFLAGS   = -std=gnu11 -g -march=native -O3 -funroll-loops -fomit-frame-pointer -msse4.2 -Wall -Wextra -Wpedantic -Wstrict-aliasing
 LDFLAGS  = -lm
 SRC      = $(wildcard *.c)
 OBJ      = $(SRC:.c=.o)

@@ -19,7 +19,7 @@ int maxlen = 0;
 const int nbench = 10000;
 
 
-void sigint_handler(int s)
+void sigint_handler(__attribute__((unused)) int s)
 {
     sigint_received = 1;
 }
@@ -98,7 +98,7 @@ int main()
         for (l = maxlen; l >= minlen; l--) {
             if (!set_find(hs, address + 56 - l, l)) {
                 stellar_secret(secret, (uint8_t *)seed);
-                printf("{\"suffix\": \"%s\", \"address\": \"%s\", \"secret\": \"%s\"}\n", address + 56 - l, address, secret);
+                printf("{\"suffix\": \"%s\", \"address\": \"%s\", \"secret\": \"%s\", \"len\":%d}\n", address + 56 - l, address, secret, l);
                 hit++;
                 break;
             }
@@ -108,8 +108,8 @@ int main()
         if (i % nbench == 0) {
             newtime = clock();
             double dt = 1.0 * (newtime - oldtime) / CLOCKS_PER_SEC;
-            fprintf(stderr, "generation rate: %g addr/sec\thit rate: %g addr/sec\n",
-                    round(exp_avg(1.0 * nbench / dt, 0)),
+            fprintf(stderr, "generation rate: %.1f addr/s,  hit rate: %.1f addr/s\n",
+                    round(10.0 * exp_avg(1.0 * nbench / dt, 0)) / 10.0,
                     round(10.0 * exp_avg(1.0 * (hit - oldhit) / dt, 1)) / 10.0);
             oldtime = newtime;
             oldhit = hit;
