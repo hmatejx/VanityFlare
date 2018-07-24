@@ -23,13 +23,13 @@ cat("Total number of generated addresses:", tot, "\n")
 # get counts
 lens <- 3:10
 gens <- sapply(lens, function(i) {
-  db$count(paste('{"len": { "$gt":', i , '}}'))
+  db$count(paste('{"len": { "$eq":', i , '}}'))
 })
 
 # plot results
-plot(lens, gens, log = "y", type = "b", ylim = c(1, 1e8), xlab = "Length", ylab = "Count")
+plot(lens, gens, log = "y", type = "b", ylim = c(1, 1e10), xlab = "Length", ylab = "Count")
 text(lens, gens, labels = gens, adj = c(-0.25, -0.5))
-abline(h = 10^(0:8), lwd = 0.5, lty = 1, col = "gray")
+abline(h = 10^(0:9), lwd = 0.5, lty = 1, col = "gray")
 abline(v = lens, lwd = 0.5, lty = 1, col = "gray")
 title(main = paste0("Generated Stellar Vanity Addresses (", tot, " in total)"))
 box()

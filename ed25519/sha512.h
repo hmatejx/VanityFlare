@@ -17,5 +17,9 @@ int sha512_init(sha512_context * md);
 int sha512_final(sha512_context * md, unsigned char *out);
 int sha512_update(sha512_context * md, const unsigned char *in, size_t inlen);
 int sha512(const unsigned char *message, size_t message_len, unsigned char *out);
+inline int crypto_hash_sha512(unsigned char *out, const unsigned char *in, size_t inlen)
+{
+    return sha512(in, inlen, out);
+}
 
 #endif

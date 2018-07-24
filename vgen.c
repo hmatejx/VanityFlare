@@ -13,6 +13,9 @@
 #include "seed.h"
 
 
+#define MINLEN 5
+
+
 volatile sig_atomic_t sigint_received = 0;
 int minlen = INT32_MAX;
 int maxlen = 0;
@@ -49,7 +52,7 @@ int read_keywords(const char* filename, set* hs)
     // getline will (re)alloc if necessary..
     while ((linelen = getline(&linebuf, &linesiz, infile)) != -1) {
         // skip empty or short lines
-        if (linelen <= 4) continue;
+        if (linelen <= MINLEN) continue;
         const int ll = linelen - 1;
         assert(!set_add(hs, linebuf, ll));
         if (ll > maxlen)
