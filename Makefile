@@ -1,13 +1,11 @@
 EXEC     = vgen.exe
 CC       = gcc
-CFLAGS   = -std=gnu11 -g -march=native -O3 -funroll-loops -fomit-frame-pointer -msse4.2 -Wall -Wextra -Wpedantic -Wstrict-aliasing
+CFLAGS   = -std=gnu11 -g -O3 -march=native -msse4.2 -funroll-loops -fomit-frame-pointer -Wall -Wextra -Wstrict-aliasing
 LDFLAGS  = -lm
 SRC      = $(wildcard *.c)
 OBJ      = $(SRC:.c=.o)
 
 all: $(EXEC)
-
--include $(OBJ:.o=.d)
 
 $(EXEC): $(OBJ) ed25519/libed25519.a hashset/libhashset.a crc16/libcrc16.a base32/libbase32.a
 	$(CC) -o $@ $^ $(LDFLAGS)
@@ -42,3 +40,5 @@ cleanall:
 
 prod:
 	@strip vgen.exe
+
+-include $(OBJ:.o=.d)

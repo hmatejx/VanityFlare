@@ -8,7 +8,7 @@
 #ifndef HASHSET_H
 #define HASHSET_H
 
-#include <stddef.h>
+#include <stdint.h>
 #include "hasher.h"
 
 #define SUCCESS        0
@@ -26,7 +26,7 @@
  * @param size        number of bytes occupied by element
  * @return hash code
  */
-typedef size_t (*hasher_t)(const void *, size_t);
+typedef uint32_t (*hasher_t)(const void *, uint32_t);
 
 /**
  * Set Type
@@ -49,7 +49,7 @@ typedef struct set_t set;
  *     ERR_MEM    if there is insufficient memory
  *     SUCCESS    on success
  */
-int set_alloc(set **ptr, size_t size, size_t capacity, hasher_t func);
+int set_alloc(set **ptr, uint32_t size, uint32_t capacity, hasher_t func);
 
 /**
  * Frees the set.
@@ -75,7 +75,7 @@ int set_free(set **ptr);
  *    ERR_SIZE   if the given element could not be inserted
  *    SUCCESS    on success
  */
-int set_add(set *ptr, const void *element, size_t size);
+int set_add(set *ptr, const void *element, uint32_t size);
 
 /**
  * Determines if the given element exists in the set.
@@ -89,7 +89,7 @@ int set_add(set *ptr, const void *element, size_t size);
  *    ERR_NOT_FOUND if element is not found
  *    SUCCESS       on success
  */
-int set_find(const set *ptr, const void *element, size_t size);
+int set_find(const set *ptr, const void *element, uint32_t size);
 
 /**
  * Serializes the set to the given FILE.

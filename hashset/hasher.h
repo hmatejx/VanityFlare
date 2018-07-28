@@ -1,7 +1,8 @@
 #ifndef HASHER_H
 #define HASHER_H
 
-#include <stddef.h>
-size_t hasher(const void *element, size_t len);
+#include <stdint.h>
+
+uint32_t hasher(const void *element, uint32_t len);
 
 #endif
