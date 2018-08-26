@@ -19,7 +19,7 @@
 volatile sig_atomic_t sigint_received = 0;
 int minlen = INT32_MAX;
 int maxlen = 0;
-const int nbench = 10000;
+const int nbench = 100000;
 
 
 unsigned __int128 seed[2];
@@ -98,14 +98,15 @@ int main()
 
     /* LOAD KEYWORDS INTO A HASHSET */
     set *hs = NULL;
-    assert(!set_alloc(&hs, 500000*2, 1024*1024*10, hasher));
+    assert(!set_alloc(&hs, 500000*4, 1024*1024*20, hasher));
     count = read_keywords("names/NAMES.txt", hs);
     count += read_keywords("names/WORDS.txt", hs);
     fprintf(stderr, "loaded %d keywords, minlen = %d, maxlen = %d\n", count, minlen, maxlen);
 
     /* ADDRESS GENERATION */
     fprintf(stderr, "generating keys...\n");
-    init_seed(); //seed);
+    setlinebuf(stdout);
+    init_seed();
     oldtime = clock();
     while (!sigint_received) {
         ed25519_create_keypair(public_key, private_key, (uint8_t *)seed);
@@ -118,7 +119,7 @@ int main()
                 break;
             }
         }
-        next_seed(); //seed);
+        next_seed();
         if (++i % nbench == 0) {
             newtime = clock();
             double dt = 1.0 * (newtime - oldtime) / CLOCKS_PER_SEC;

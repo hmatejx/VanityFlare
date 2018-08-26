@@ -1,44 +1,83 @@
 #!/usr/bin/python3
 #
-from pymongo import MongoClient
-from pymongo.errors import ConnectionFailure, OperationFailure
-from collections import OrderedDict
+import mysql.connector
 import json
 import os
 import sys
 
+
+max_pool = 16
+already_in = dict()
+autocommit = 1000
+
+
 if __name__ == '__main__':
 
-    # connect to MongoDB (also check for failures)
-    cred = os.getenv("MONGO_PASS")
-    client = MongoClient('mongodb://' + ('' if cred is None else cred + '@') + 'localhost:27017/',
-                         document_class=OrderedDict)
+    # connect to MySQL (also check for failures)
     try:
-        client.admin.command('ismaster')
-    except ConnectionFailure:
-        print("MongoDB server not available!")
-        sys.exit(-1)
-    collection = client.mydb.StellarVanityPool
-    try:
-        collection.find_one({})
-    except OperationFailure:
-        print("Wrong MongoDB credentials provided!")
-        sys.exit(-1)
+        cnx = mysql.connector.connect(user=os.environ['SVP_USER'],
+                                      password=os.environ['SVP_PASS'],
+                                      database='VanityFlare')
+        cursor = cnx.cursor()
 
-    decoder = json.JSONDecoder(object_pairs_hook=OrderedDict)
+        decoder = json.JSONDecoder()
 
-    # process while generation is running
-    while True:
+        ins_query = ("INSERT IGNORE INTO SVP "
+                     "(len, suffix, xiffus, address, seed) "
+                     "VALUES (%s, %s, %s, %s, %s)")
+        upd_query = 'UPDATE keywords SET pool = %s WHERE keyword = %s'
 
-        # store the data in the Mongo DB
-        try:
+        # get list of non-full keyword pools
+        cursor.execute('SELECT keyword, pool FROM keywords')
+        for (keyword, pool) in cursor:
+            already_in[keyword] = int(pool)
+
+        # process while generation is running
+        i = 0
+        while True:
+
+            # read line from pipe; it should contain JSON data
             line = sys.stdin.readline()
-            if line == '': break
-            data = decoder.decode(line)
-            collection.insert(data)
 
-        # exit nicely if interrupted
-        except KeyboardInterrupt:
-            client.close()
-            print('\nBye.')
-            sys.exit(0)
+            # we did not get anything
+            if line == '':
+                continue
+
+            # let's see what we got
+            data = decoder.decode(line)
+            l = data['len']
+            suff = data['suffix']
+            xiff = suff[::-1]
+            addr = data['address']
+            seed = data['secret']
+
+            # ok, we got something, check the pool if needed
+            if already_in[suff] >= max_pool:
+                continue
+
+            # it is needed, insert into the database
+            cursor.execute(ins_query, (l, suff, xiff, addr, seed))
+            cursor.execute(upd_query, (already_in[suff] + 1, suff))
+            already_in[suff] = already_in[suff] + 1
+            i = i + 1
+
+            if i == 1000:
+                cnx.commit()
+                i = 0
+
+    # exit nicely if interrupted
+    except mysql.connector.Error as err:
+        if err.errno == mysql.connector.errorcode.ER_ACCESS_DENIED_ERROR:
+            print("Something is wrong with your user name or password")
+        elif err.errno == mysql.connector.errorcode.ER_BAD_DB_ERROR:
+            print("Database does not exist")
+        else:
+            print(err)
+
+
+    except KeyboardInterrupt:
+        cnx.commit()
+        cursor.close()
+        cnx.close()
+        print("\nBye.")
+        sys.exit(0)
