@@ -12,6 +12,7 @@
 #include "hashset/hashset.h"
 #include "stellar.h"
 
+#include "docopt.h"
 
 #define MINLEN 5
 #define MAXLEN 16
@@ -80,7 +81,29 @@ int read_keywords(const char* filename, set* hs)
 }
 
 
-int main()
+/* macros to make the main loop below more readalbe */
+#define BENCH\
+    if (++i % nbench == 0) {\
+        newtime = clock();\
+        double dt = 1.0 * (newtime - oldtime) / CLOCKS_PER_SEC;\
+        fprintf(stderr, "generation rate: %.1f addr/s,  hit rate: %.1f addr/s\n",\
+                round(10.0 * exp_avg(1.0 * nbench / dt, 0)) / 10.0,\
+                round(10.0 * exp_avg(1.0 * (hit - oldhit) / dt, 1)) / 10.0);\
+        oldtime = newtime;\
+        oldhit = hit;\
+    }
+
+#define GENERATE\
+    ed25519_create_keypair(public_key, private_key, (uint8_t *)seed);\
+    stellar_address(address, public_key);\
+
+#define HIT(type)\
+    stellar_secret(secret, (uint8_t *)seed);\
+    printf("{\"%s\": \"%s\", \"address\": \"%s\", \"secret\": \"%s\", \"len\":%d}\n", (type), address + 56 - l, address, secret, l);\
+    hit++;
+
+
+int main(int argc, char *argv[])
 {
     uint8_t public_key[32], private_key[64];
     uint8_t address[57] = { 0 };
@@ -94,44 +117,88 @@ int main()
     int hit = 0;
     int oldhit = 0;
 
+    int mode = 0; // search mode; 0 = database, 1 = prefix, 2 = suffix
+    char keyword[16] = { 0 };
+    int kwlen;
+    set *hs = NULL;
+
+    /* check if searching for a speciffic prefix or suffix */
+    DocoptArgs args = docopt(argc, argv, 1, "1.0rc1");
+    if (args.prefix != NULL && args.suffix != NULL) {
+        printf("%s", args.help_message);
+        exit(-1); // cant specify both
+    }
+
+    if (args.prefix != NULL) {
+        mode = 1;
+        kwlen = strlen(args.prefix);
+        strncpy(keyword, args.prefix, kwlen);
+        printf("searching for %s\n", args.prefix);
+    } else if (args.suffix != NULL) {
+        mode = 2;
+        kwlen = strlen(args.suffix);
+        strncpy(keyword, args.suffix, kwlen);
+        printf("searching for %s\n", args.suffix);
+    }
+
+    // install an interrupt handler
     signal(SIGINT, sigint_handler);
 
     /* LOAD KEYWORDS INTO A HASHSET */
-    set *hs = NULL;
-    assert(!set_alloc(&hs, 500000*4, 1024*1024*20, hasher));
-    count = read_keywords("names/NAMES.txt", hs);
-    count += read_keywords("names/WORDS.txt", hs);
-    fprintf(stderr, "loaded %d keywords, minlen = %d, maxlen = %d\n", count, minlen, maxlen);
+    if (mode == 0) {
+        assert(!set_alloc(&hs, 500000*4, 1024*1024*20, hasher));
+        count = read_keywords("names/NAMES.txt", hs);
+        count += read_keywords("names/WORDS.txt", hs);
+        fprintf(stderr, "loaded %d keywords, minlen = %d, maxlen = %d\n", count, minlen, maxlen);
+    }
 
     /* ADDRESS GENERATION */
     fprintf(stderr, "generating keys...\n");
     setlinebuf(stdout);
     init_seed();
     oldtime = clock();
-    while (!sigint_received) {
-        ed25519_create_keypair(public_key, private_key, (uint8_t *)seed);
-        stellar_address(address, public_key);
-        for (l = maxlen; l >= minlen; l--) {
-            if (!set_find(hs, address + 56 - l, l)) {
-                stellar_secret(secret, (uint8_t *)seed);
-                printf("{\"suffix\": \"%s\", \"address\": \"%s\", \"secret\": \"%s\", \"len\":%d}\n", address + 56 - l, address, secret, l);
-                hit++;
-                break;
+
+    switch (mode) {
+    case 0:
+        while (!sigint_received) {
+            GENERATE;
+            for (l = maxlen; l >= minlen; l--) {
+                if (!set_find(hs, address + 56 - l, l)) {
+                    HIT("suffix");
+                    break;
+                }
             }
+            next_seed();
+            BENCH;
         }
-        next_seed();
-        if (++i % nbench == 0) {
-            newtime = clock();
-            double dt = 1.0 * (newtime - oldtime) / CLOCKS_PER_SEC;
-            fprintf(stderr, "generation rate: %.1f addr/s,  hit rate: %.1f addr/s\n",
-                    round(10.0 * exp_avg(1.0 * nbench / dt, 0)) / 10.0,
-                    round(10.0 * exp_avg(1.0 * (hit - oldhit) / dt, 1)) / 10.0);
-            oldtime = newtime;
-            oldhit = hit;
+        break;
+
+    case 1:
+       while (!sigint_received) {
+            GENERATE;
+            if (!strncmp(keyword, address + 1, kwlen)) {
+                HIT("prefix");
+            }
+            next_seed();
+            BENCH;
         }
+        break;
+
+    case 2:
+       while (!sigint_received) {
+            GENERATE;
+            if (!strncmp(keyword, address + 56 - kwlen, kwlen)) {
+                HIT("suffix");
+            }
+            next_seed();
+            BENCH;
+        }
+        break;
     }
 
-    assert(!set_free(&hs));
+    if (hs != NULL) {
+        assert(!set_free(&hs));
+    }
 
     return 0;
 }

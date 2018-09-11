@@ -1,0 +1,13 @@
+vgen.
+
+Usage:
+  vgen
+  vgen [ --prefix=<str> | --suffix=<str> ]
+  vgen --help
+  vgen --version
+
+Options:
+  -h --help                Show this screen.
+  -v --version             Show version.
+  -p <str> --prefix=<str>  Search for addresses with desired prefix = <str>.
+  -s <str> --suffix=<str>  Search for addresses with desired suffix = <str>.

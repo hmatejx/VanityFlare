@@ -5,10 +5,13 @@ LDFLAGS  = -lm
 SRC      = $(wildcard *.c)
 OBJ      = $(SRC:.c=.o)
 
-all: $(EXEC)
+all: docopt $(EXEC)
 
 $(EXEC): $(OBJ) ed25519/libed25519.a hashset/libhashset.a crc16/libcrc16.a base32/libbase32.a
 	$(CC) -o $@ $^ $(LDFLAGS)
+
+docopt:
+	@docopt_c.py vgen.docopt > docopt.h
 
 hashset/libhashset.a:
 	@make -C hashset
