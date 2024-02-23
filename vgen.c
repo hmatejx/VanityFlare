@@ -176,7 +176,7 @@ int main(int argc, char *argv[])
     case 1:
        while (!sigint_received) {
             GENERATE;
-            if (!strncmp(keyword, address + 1, kwlen)) {
+            if (!strncmp(keyword, (char *)(address + 1), kwlen)) {
                 HIT("prefix");
             }
             next_seed();
@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
     case 2:
        while (!sigint_received) {
             GENERATE;
-            if (!strncmp(keyword, address + 56 - kwlen, kwlen)) {
+            if (!strncmp(keyword, (char *)(address + 56 - kwlen), kwlen)) {
                 HIT("suffix");
             }
             next_seed();
